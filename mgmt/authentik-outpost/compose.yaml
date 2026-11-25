@@ -1,0 +1,20 @@
+services:
+  authentik-outpost:
+    image: "ghcr.io/goauthentik/proxy:2026.8.5"
+    container_name: "authentik-outpost"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    networks:
+      - "mgmt"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.rule=Host(`mgmt-auth.example.org`)"
+      - "traefik.http.routers.authentik.tls=true"
+      - "traefik.http.routers.authentik.entrypoints=https"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+
+networks:
+  mgmt:
+    external: true

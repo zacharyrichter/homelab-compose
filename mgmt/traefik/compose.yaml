@@ -1,0 +1,61 @@
+services:
+  traefik:
+    container_name: "traefik"
+    image: "traefik:v3.7.19"
+    restart: "unless-stopped"
+    ports:
+      - "443:443"
+      - "47655:47655"
+    volumes:
+      - "./config/:/etc/traefik/"
+      - "/opt/appdata/traefik/:/opt/appdata/traefik/"
+      - "/opt/appdata/traefik/logs:/opt/appdata/traefik/logs"
+      - "/opt/appdata/traefik/acme.json:/opt/appdata/traefik/acme.json"
+    networks:
+      - "mgmt"
+      - "kasm"
+      - "socket"
+    env_file:
+      - path: "./.env"
+        required: true
+    security_opt:
+      - "no-new-privileges:true"
+    depends_on:
+      - "dockersocket"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`mgmt-traefik.example.org`)"
+      - "traefik.http.routers.api.entryPoints=https"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.middlewares=authentik@file"
+
+  dockersocket:
+    container_name: "dockersocket"
+    image: "tecnativa/docker-socket-proxy:v0.5.0"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - "socket"
+
+networks:
+  mgmt:
+    external: true
+  # Traefik and mgmt-kasm only; the browser shares no network with the other stacks.
+  kasm:
+    name: kasm
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  # Traefik and the socket proxy only; internal, so the proxy has no route out.
+  socket:
+    name: socket
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

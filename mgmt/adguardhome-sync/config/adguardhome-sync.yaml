@@ -1,0 +1,29 @@
+origin:
+  url: https://router.example.org:3443
+  username: adguardhome-sync
+  password: 'CHANGE_ME'
+
+replicas:
+  - url: https://adguard.example.net
+    username: admin
+    password: 'CHANGE_ME'
+
+features:
+  generalSettings: false
+  queryLogConfig: false
+  statsConfig: false
+  clientSettings: false
+  services: false
+  filters:
+    blacklist: false
+    whitelist: false
+    userRules: true
+  dhcp:
+    serverConfig: false
+    staticLeases: false
+  dns:
+    serverConfig: false
+    accessLists: false
+    rewrites: false
+
+cron: "0 */6 * * *"

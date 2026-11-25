@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "local>renovate-bot/renovate-config"],
+  "dependencyDashboard": {
+    "enabled": true,
+    "title": "Renovate Dashboard"
+  },
+  "assignees": ["admin"],
+  "labels": ["renovate"],
+  "configMigration": true,
+  "prHourlyLimit": 0,
+  "automerge": false,
+  "minimumReleaseAge": "3 days",
+  "digest": {
+    "enabled": true
+  },
+  "hostRules": [
+    {
+      "matchHost": "docker.io",
+      "concurrentRequestLimit": 2
+    }
+  ],
+  "commitMessageSuffix": " (in {{parentDir}})"
+}

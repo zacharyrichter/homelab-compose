@@ -1,0 +1,48 @@
+services:
+  mgmt-kasm:
+    image: kasmweb/chromium:1.19.0-rolling-daily
+    container_name: mgmt-kasm
+    shm_size: "512mb"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - /opt/appdata/mgmt-kasm/profile:/home/kasm-user
+      - /opt/appdata/mgmt-kasm/downloads:/home/kasm-user/Downloads
+    networks:
+      - kasm
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=kasm"
+      - "traefik.http.routers.kasm.entrypoints=https"
+      - "traefik.http.routers.kasm.rule=Host(`mgmt-kasm.example.org`)"
+      - "traefik.http.services.kasm.loadbalancer.server.port=6901"
+      - "traefik.http.services.kasm.loadbalancer.server.scheme=https"
+      - "traefik.http.services.kasm.loadbalancer.serverstransport=insecure-backend@file"
+      - "traefik.http.routers.kasm.tls=true"
+      - "traefik.http.routers.kasm.middlewares=kasm-clients@file,authentik@file"
+
+  kasm-go-helper:
+    build:
+      context: .
+      pull: false
+    container_name: kasm-go-helper
+    restart: unless-stopped
+    env_file:
+      - path: "./.env"
+        required: true
+    network_mode: "service:mgmt-kasm"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=kasm"
+      - "traefik.http.routers.kasm-go.entrypoints=https"
+      - "traefik.http.routers.kasm-go.rule=Host(`mgmt-kasm.example.org`) && PathPrefix(`/go`)"
+      - "traefik.http.routers.kasm-go.tls=true"
+      - "traefik.http.routers.kasm-go.middlewares=kasm-clients@file,authentik@file"
+      - "traefik.http.services.kasm-go.loadbalancer.server.port=8080"
+
+networks:
+  # Created by the traefik stack, which must be deployed first.
+  kasm:
+    external: true

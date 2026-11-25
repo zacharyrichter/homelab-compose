@@ -1,0 +1,70 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+entryPoints:
+  https:
+    address: :443
+    http:
+      # Drop headers whose names alias another header (e.g. X_Forwarded_For), so they can't spoof headers Traefik sets
+      aliasHeadersStrategy: delete
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: example.org
+            sans:
+              - '*.example.org'
+      middlewares:
+        - securityHeaders@file
+        - compress@file
+  pulse-agent:
+    address: :47655
+    http:
+      aliasHeadersStrategy: delete
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: example.org
+            sans:
+              - '*.example.org'
+      middlewares:
+        - securityHeaders@file
+        - compress@file
+providers:
+  providersThrottleDuration: 2s
+  file:
+    filename: "/etc/traefik/fileConfig.yml"
+    watch: true
+  docker:
+    watch: true
+    network: mgmt
+    defaultRule: "Host(`{{ lower (trimPrefix `/` .Name )}}.example.org`)"
+    exposedByDefault: false
+    endpoint: "tcp://dockersocket:2375"
+api:
+  dashboard: true
+  insecure: false
+log:
+  filePath: "/opt/appdata/traefik/logs/traefik.log"
+  level: INFO
+  maxSize: 10
+  maxBackups: 3
+  maxAge: 7
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.org
+      storage: "/opt/appdata/traefik/acme.json"
+      dnsChallenge:
+        provider: cloudflare
+        propagation:
+          disableChecks: true
+          delayBeforeChecks: 60s
+accessLog:
+  filePath: "/opt/appdata/traefik/logs/access.log"
+  bufferingSize: 100
+  fields:
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+        X-Forwarded-For: keep

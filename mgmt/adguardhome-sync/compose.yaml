@@ -1,0 +1,8 @@
+services:
+  adguardhome-sync:
+    image: "ghcr.io/bakito/adguardhome-sync:v0.9.6"
+    container_name: "adguardhome-sync"
+    restart: "unless-stopped"
+    command: "run --config /config/adguardhome-sync.yaml"
+    volumes:
+      - "./config/adguardhome-sync.yaml:/config/adguardhome-sync.yaml"
