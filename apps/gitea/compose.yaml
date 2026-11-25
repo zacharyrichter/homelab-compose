@@ -1,0 +1,27 @@
+services:
+  server:
+    image: "docker.gitea.com/gitea:28.4.0"
+    container_name: "gitea"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/opt/appdata/gitea:/data"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    ports:
+      - "222:22"
+    networks:
+      - "warptunnel"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitea.entryPoints=https"
+      - "traefik.http.routers.gitea.rule=Host(`git.example.org`)"
+      - "traefik.http.services.gitea.loadbalancer.server.port=3000"
+      - "traefik.http.routers.gitea.middlewares=gitea-ipallow@file"
+      - "traefik.http.routers.gitea.tls=true"
+
+networks:
+  warptunnel:
+    external: true

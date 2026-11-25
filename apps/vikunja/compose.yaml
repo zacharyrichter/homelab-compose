@@ -1,0 +1,24 @@
+services:
+  vikunja:
+    image: "vikunja/vikunja:2.8.0"
+    container_name: "vikunja"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/opt/appdata/vikunja/files:/app/vikunja/files"
+      - "/opt/appdata/vikunja/db:/db"
+    networks:
+      - "warptunnel"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vikunja.rule=Host(`tasks.example.org`)"
+      - "traefik.http.routers.vikunja.entrypoints=https"
+      - "traefik.http.routers.vikunja.tls=true"
+      - "traefik.http.routers.vikunja.middlewares=ipallow@file"
+      - "traefik.http.services.vikunja.loadbalancer.server.port=3456"
+
+networks:
+  warptunnel:
+    external: true

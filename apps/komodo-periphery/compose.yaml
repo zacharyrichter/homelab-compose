@@ -1,0 +1,28 @@
+services:
+  periphery:
+    image: "ghcr.io/moghtech/komodo-periphery:2.3.4"
+    container_name: "komodo-periphery"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/proc:/proc"
+      - "/etc/komodo:/etc/komodo"
+    security_opt:
+      - "no-new-privileges:true"
+    networks:
+      - "komodo"
+    ports:
+      - "8120:8120"
+    labels:
+      - "komodo.skip="
+
+networks:
+  komodo:
+    name: "komodo"
+    ipam:
+      config:
+        - subnet: "172.18.0.0/16"
+          gateway: "172.18.0.1"

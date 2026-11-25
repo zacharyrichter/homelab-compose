@@ -1,0 +1,81 @@
+http:
+  routers:
+    paperless:
+      entryPoints:
+        - https
+      rule: 'Host(`docs.example.org`)'
+      service: paperless
+      middlewares:
+        - ipallow
+      tls: {}
+
+  ## SERVICES ##
+  services:
+    paperless:
+      loadBalancer:
+        servers:
+          - url: http://10.0.50.100:8000
+        passHostHeader: true
+  ## MIDDLEWARES ##
+  middlewares:
+    gitea-ipallow:
+      ipAllowList:
+        sourceRange:
+          - "127.0.0.1/32"
+          - "172.19.0.0/16"
+          - "10.0.99.0/24"
+          - "10.0.60.4/32"
+          - "10.0.50.0/24"
+          - "10.0.10.0/24"
+          - "10.200.0.0/24"
+        ipStrategy:
+          depth: 0
+    ipallow:
+      ipAllowList:
+        sourceRange:
+          - "127.0.0.1/32"
+          - "172.19.0.0/16"
+          - "10.0.99.0/24"
+          - "10.0.50.0/24"
+          - "10.0.10.0/24"
+          - "10.200.0.0/24"
+        ipStrategy:
+          depth: 0
+    compress:
+      compress:
+        # Brotli preferred, gzip fallback; excludes already-compressed formats
+        excludedContentTypes:
+          - "image/jpeg"
+          - "image/png"
+          - "image/gif"
+          - "image/webp"
+          - "image/avif"
+          - "video/mp4"
+          - "video/webm"
+          - "application/zip"
+
+    securityHeaders:
+      headers:
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex"
+          server: ""           # Suppress server version disclosure
+          X-Forwarded-Proto: "https"
+        sslProxyHeaders:
+          X-Forwarded-Proto: https
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customFrameOptionsValue: "SAMEORIGIN"
+        referrerPolicy: "strict-origin-when-cross-origin"
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsSeconds: 315360000
+        stsPreload: true
+# Only use secure ciphers - https://ssl-config.mozilla.org/
+tls:
+  options:
+    default:
+      minVersion: VersionTLS13
+      sniStrict: true

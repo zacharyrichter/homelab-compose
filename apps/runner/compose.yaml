@@ -1,0 +1,20 @@
+services:
+  act_runner:
+    image: "gitea/runner:6.0.0"
+    container_name: "act_runner"
+    restart: "unless-stopped"
+    depends_on: []
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./config.yaml:/config.yaml"
+      - "/opt/appdata/act_runner/data:/data"
+    env_file:
+      - path: "./.env"
+        required: true
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: "172.22.0.0/16"
+          gateway: "172.22.0.1"

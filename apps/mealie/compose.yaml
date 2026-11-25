@@ -1,0 +1,27 @@
+services:
+  mealie:
+    image: "ghcr.io/mealie-recipes/mealie:v3.31.0"
+    container_name: "mealie"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/opt/appdata/mealie:/app/data/"
+    deploy:
+      resources:
+        limits:
+          memory: 1000M
+    networks:
+      - "warptunnel"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mealie.entryPoints=https"
+      - "traefik.http.routers.mealie.rule=Host(`mealie.example.org`)"
+      - "traefik.http.services.mealie.loadbalancer.server.port=9000"
+      - "traefik.http.routers.mealie.middlewares=ipallow@file"
+      - "traefik.http.routers.mealie.tls=true"
+
+networks:
+  warptunnel:
+    external: true

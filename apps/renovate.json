@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "local>renovate-bot/renovate-config"],
+  "dependencyDashboard": {
+    "enabled": true,
+    "title": "Renovate Dashboard"
+  },
+  "assignees": ["admin"],
+  "labels": ["renovate"],
+  "configMigration": true,
+  "prHourlyLimit": 0,
+  "automerge": false,
+  "commitMessageSuffix": " (in {{parentDir}})",
+  "hostRules": [
+    {
+      "matchHost": "docker.io",
+      "concurrentRequestLimit": 2
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["docker-compose"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "matchPackageNames": ["mariadb", "collabora/code"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Locked to seafile-mc's supported compatibility matrix"
+    },
+    {
+      "matchFileNames": ["authentik/**"],
+      "matchPackageNames": ["postgres", "docker.io/library/postgres"],
+      "allowedVersions": "/^16-alpine$/",
+      "description": "Authentik's postgres hard-pinned to exactly 16-alpine — regex allowedVersions, not update-type filtering, so it can't slip through on a classification miss"
+    },
+    {
+      "matchPackageNames": ["ghcr.io/goauthentik/server", "postgres"],
+      "matchFileNames": ["authentik/compose.yaml"],
+      "minimumReleaseAge": "0 days",
+      "labels": ["renovate", "authentik-review"],
+      "description": "Auth-critical — surface every update immediately, no cooldown delay, for manual review"
+    },
+  ]
+}

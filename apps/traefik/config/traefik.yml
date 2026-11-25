@@ -1,0 +1,80 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+entryPoints:
+  # HTTPS endpoint, with domain wildcard
+  https:
+    address: :443
+      # Reuse list of Cloudflare Trusted IP's above for HTTPS requests
+    http:
+      # Drop headers whose names alias another header (e.g. X_Forwarded_For), so they can't spoof headers Traefik sets
+      aliasHeadersStrategy: delete
+      tls:
+        # Generate a wildcard domain certificate
+        certResolver: letsencrypt
+        domains:
+          - main: example.org
+            sans:
+              - '*.example.org'
+      middlewares:
+        - securityHeaders@file
+        - compress@file
+providers:
+  providersThrottleDuration: 2s
+
+  # File provider for connecting things that are outside of docker / defining middlewares
+  file:
+    filename: "/etc/traefik/fileConfig.yml"
+    watch: true
+
+  # Docker provider for connecting all apps that are inside of the docker network
+  docker:
+    watch: true
+    network: warptunnel    # Add Your Docker Network Name Here
+    # Default host rule to containername.domain.example
+    defaultRule: "Host(`{{ lower (trimPrefix `/` .Name )}}.example.org`)"    # Replace with your domain
+    # swarmModeRefreshSeconds: 15s
+    exposedByDefault: false
+    endpoint: "tcp://dockersocket:2375" # Uncomment if you are using docker socket proxy
+
+# Enable traefik ui
+api:
+  dashboard: true
+  insecure: false
+
+# Log level INFO|DEBUG|ERROR
+log:
+  filePath: "/opt/appdata/traefik/logs/traefik.log"
+  level: INFO
+  maxSize: 10
+  maxBackups: 3
+  maxAge: 7
+
+# Use letsencrypt to generate ssl serficiates
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.org
+     # caServer: https://acme-v02.api.letsencrypt.org/directory
+      storage: "/opt/appdata/traefik/acme.json"
+      dnsChallenge:
+        provider: cloudflare
+        # Used to make sure the dns challenge is propagated to the rights dns servers
+        #resolvers:
+        #  - "1.1.1.1:53"
+        #  - "1.0.0.1:53"
+        propagation:
+          disableChecks: true
+          delayBeforeChecks: 60s
+
+accessLog:
+  # Access log, kept in traefik's own log directory
+  filePath: "/opt/appdata/traefik/logs/access.log"
+  bufferingSize: 100
+  fields:
+    headers:
+      defaultMode: drop        # Don't log all headers by default (reduces noise and PII)
+      names:
+        User-Agent: keep
+        X-Forwarded-For: keep

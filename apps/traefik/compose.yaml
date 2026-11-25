@@ -1,0 +1,45 @@
+services:
+  traefik:
+    image: "traefik:v3.7.19"
+    container_name: "traefik"
+    restart: "unless-stopped"
+    depends_on:
+      - "dockersocket"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "./config/:/etc/traefik/"
+      - "/opt/appdata/traefik/logs:/opt/appdata/traefik/logs"
+      - "/opt/appdata/traefik/acme.json:/opt/appdata/traefik/acme.json"
+    ports:
+      - "443:443"
+    networks:
+      - "warptunnel"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.example.org`)"
+      - "traefik.http.routers.api.entryPoints=https"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.middlewares=ipallow@file"
+      - "traefik.http.routers.api.tls=true"
+
+  dockersocket:
+    image: "tecnativa/docker-socket-proxy:v0.5.0"
+    container_name: "dockersocket"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - "warptunnel"
+
+networks:
+  warptunnel:
+    name: "warptunnel"
+    ipam:
+      config:
+        - subnet: "172.19.0.0/16"
+          gateway: "172.19.0.1"

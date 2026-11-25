@@ -1,0 +1,81 @@
+services:
+  seafile-db:
+    image: "mariadb:10.11.19"
+    container_name: "seafile-mysql"
+    restart: "unless-stopped"
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/opt/appdata/seafile/seafile-mysql/db:/var/lib/mysql"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh", "--connect", "--mariadbupgrade", "--innodb_initialized"]
+      interval: 20s
+      start_period: 60s
+      timeout: 5s
+      retries: 10
+    networks:
+      - "seafile-net"
+
+  seafile-redis:
+    image: "redis:8.10.3"
+    container_name: "seafile-redis"
+    restart: "unless-stopped"
+    networks:
+      - "seafile-net"
+
+  seafile:
+    image: "seafileltd/seafile-mc:13.0.29"
+    container_name: "seafile"
+    restart: "unless-stopped"
+    depends_on:
+      seafile-db:
+        condition: service_healthy
+      seafile-redis:
+        condition: service_started
+    env_file:
+      - path: "./.env"
+        required: true
+    volumes:
+      - "/opt/appdata/seafile/seafile-data:/shared"
+      - "/mnt/nvme-data/seafile/libraries:/shared/seafile/seafile-data"
+    networks:
+      - "seafile-net"
+      - "warptunnel"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seafile.entryPoints=https"
+      - "traefik.http.routers.seafile.rule=Host(`drive.example.org`)"
+      - "traefik.http.services.seafile.loadbalancer.server.port=80"
+      - "traefik.http.routers.seafile.middlewares=ipallow@file"
+      - "traefik.http.routers.seafile.tls=true"
+
+  collabora:
+    image: "collabora/code:24.04.13.3.1"
+    container_name: "seafile-collabora"
+    restart: "unless-stopped"
+    cap_add:
+      - "MKNOD"
+    env_file:
+      - path: "./.env"
+        required: true
+    networks:
+      - "seafile-net"
+      - "warptunnel"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.collabora.entryPoints=https"
+      - "traefik.http.routers.collabora.rule=Host(`office.example.org`)"
+      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
+      - "traefik.http.routers.collabora.middlewares=ipallow@file"
+      - "traefik.http.routers.collabora.tls=true"
+
+networks:
+  seafile-net:
+    name: "seafile-net"
+    ipam:
+      config:
+        - subnet: "172.24.0.0/16"
+          gateway: "172.24.0.1"
+  warptunnel:
+    external: true
