@@ -21,8 +21,8 @@ The lab splits its Docker hosts by role, and so does this repo.
 | Stack | What it shows |
 |---|---|
 | [`apps/traefik`](apps/traefik), [`mgmt/traefik`](mgmt/traefik) | Reverse proxy with wildcard TLS (Cloudflare DNS challenge) behind a Docker socket proxy |
-| [`apps/authentik`](apps/authentik) | Single sign-on with its own Postgres; the OIDC provider the other apps log in through |
-| [`mgmt/authentik-outpost`](mgmt/authentik-outpost) | Authentik forward-auth, so admin tools without their own login sit behind SSO |
+| [`apps/authentik`](apps/authentik) | Single sign-on with its own Postgres; the OIDC provider the other apps log in through. The design is in [one-front-door](https://github.com/zacharyrichter/one-front-door) |
+| [`mgmt/authentik-outpost`](mgmt/authentik-outpost) | Authentik forward-auth, so admin tools without their own login sit behind SSO ([one-front-door](https://github.com/zacharyrichter/one-front-door)) |
 | [`apps/gitea`](apps/gitea), [`apps/runner`](apps/runner) | Self-hosted Git and an Actions runner |
 | [`mgmt/komodo`](mgmt/komodo), [`apps/komodo-periphery`](apps/komodo-periphery) | Komodo Core and its per-host agent: stacks deploy from Git |
 | [`apps/renovate.json`](apps/renovate.json), [`mgmt/renovate.json`](mgmt/renovate.json) | Update policy for every image in the repo |
@@ -54,7 +54,8 @@ The lab splits its Docker hosts by role, and so does this repo.
 - **Two kinds of access control, chosen per host.** Apps on the APPS host use
   an IP allowlist middleware (`ipallow@file`) and their own logins, mostly OIDC
   through Authentik. Admin tools on the mgmt host use Authentik forward-auth
-  (`authentik@file`). Forward-auth isn't put in front of apps that already
+  (`authentik@file`). How each app is wired in, and who can open what, is in
+  [one-front-door](https://github.com/zacharyrichter/one-front-door). Forward-auth isn't put in front of apps that already
   have a login, because two logins for one app helps no one.
 - **Services that aren't containers still go through Traefik.** The file
   provider (`config/fileConfig.yml`) routes to services on another host, with
